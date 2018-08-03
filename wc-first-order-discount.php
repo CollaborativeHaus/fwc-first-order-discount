@@ -16,18 +16,23 @@ if ( ! defined( 'ABSPATH' ) ) {
   exit;
 }
 
+/* Include translations */
+function fod_load_textdomain() {
+  load_plugin_textdomain( 'woo-first-discount', false, dirname( plugin_basename( __FILE__ ) ) . '/lang/' );
+}
+add_action('plugins_loaded', 'fod_load_textdomain');
 
 /* Add Admin Settings Page */
 function fod_add_admin_menu() {
-  add_submenu_page('woocommerce', 'First Order Discount', 'manage_options', 'wc_first_order_discount', 'fod_add_options_page');
+  add_submenu_page( 'woocommerce', 'First Order Discount', 'First Order Discount', 'manage_options', 'wc_first_order_discount', 'fod_add_options_page' );
 }
 add_action('admin_menu', 'fod_add_admin_menu');
 
 function fod_settings_init() {
   register_setting('fod', 'fod_settings');
-  add_settings_section('fod_settings_section', __( 'Configuration', 'wc-first-order-discount', '', 'fod_settings'));
-  add_settings_field( 'fod_select', __( 'Select discount type', 'wc-first-order-discount' ), 'fod_select_render', 'fod', 'fod_settings' );
-  add_settings_field( 'fod_value',  __( 'Enter discount value', 'wc-first-order-discount' ), 'fod_value_render', 'fod',  'fod_settings' );
+  add_settings_section( 'fod_settings_section', __('Choose your setting', 'wc-first-order-discount'), '', 'fod' );
+  add_settings_field( 'fod_select', __( 'Select discount type', 'wc-first-order-discount' ), 'fod_select_render', 'fod', 'fod_settings_section' );
+  add_settings_field( 'fod_value',  __( 'Enter discount value', 'wc-first-order-discount' ), 'fod_value_render', 'fod',  'fod_settings_section' );
 }
 add_action('admin_init', 'fod_settings_init');
 
@@ -75,7 +80,7 @@ function fod_add_fee() {
     $discount_value =$options['fod_value'];
 
     if ($order_count == 0. and $discount_type !== 'off') {
-      $subtotal =. WC()->cart->cart_contents_total;
+      $subtotal = WC()->cart->cart_contents_total;
       if ($discount_type == 'fixed') {
         WC()->cart->add_fee('First Order Discount', -$discount_value);
       } else {
