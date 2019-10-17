@@ -33,6 +33,7 @@ function fod_settings_init() {
   add_settings_section( 'fod_settings_section', __('Choose your setting', 'wc-first-order-discount'), '', 'fod' );
   add_settings_field( 'fod_select', __( 'Select discount type', 'wc-first-order-discount' ), 'fod_select_render', 'fod', 'fod_settings_section' );
   add_settings_field( 'fod_value',  __( 'Enter discount value', 'wc-first-order-discount' ), 'fod_value_render', 'fod',  'fod_settings_section' );
+  add_settings_field( 'fod_sales_discount',  __( 'Sales Discount', 'wc-first-order-discount' ), 'fod_sales_discount_render', 'fod', 'fod_settings_section' );
 }
 add_action('admin_init', 'fod_settings_init');
 
@@ -57,6 +58,17 @@ function fod_value_render() {
   <?php
 }
 
+function fod_sales_discount_render(  ) { 
+  $options = get_option( 'fod_settings' );
+  ?>
+  <input id="off-sales" type='radio' name='fod_settings[fod_sales_discount]' <?php checked( $options['fod_sales_discount'], 'off' ); ?> value='off'>
+  <label for="off"><?php echo __( 'Disable first order discount if sale products in cart', 'wc-first-order-discount' ); ?></label>
+  <br>
+  <input id="on-sales" type='radio' name='fod_settings[fod_sales_discount]' <?php checked( $options['fod_sales_discount'], 'on' ); ?> value='on'>
+  <label for="on"><?php echo __( 'Enable first order discount if sale products in cart', 'wc-first-order-discount' ); ?></label>
+  <?php
+}
+
 function fod_add_options_page() {
   ?>
   <form action='options.php' method='post'>
@@ -78,13 +90,27 @@ function fod_add_fee() {
     $options = get_option('fod_settings');
     $discount_type =$options['fod_select'];
     $discount_value =$options['fod_value'];
+    $enabled_for_products_on_sale=$options['fod_sales_discount'];
+    $cart_has_sales_products=false;
 
-    if ($order_count == 0. and $discount_type !== 'off') {
+    if ($enabled_for_products_on_sale==off){
+      foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
+        $product = new WC_Product($cart_item['product_id']); 
+        $onsale=$product->is_on_sale() ? 'yes' : 'no'; 
+        if ($onsale=='yes'){
+          $cart_has_sales_products=true;
+        }
+      }
+    }
+
+
+
+    if ($order_count == 0. and $discount_type !== 'off' and $cart_has_sales_products == false) {
       $subtotal = WC()->cart->cart_contents_total;
       if ($discount_type == 'fixed') {
         WC()->cart->add_fee('First Order Discount', -$discount_value);
       } else {
-        $discount = $discountValue/100;
+        $discount = $discount_value/100;
         WC()->cart->add_fee( 'First Order Discount', -$subtotal*$discount );
       }
     }
